@@ -26,7 +26,7 @@
     *   Генерирует наглядное дерево файлов, чтобы нейросеть лучше понимала архитектуру проекта перед анализом кода.
 
 ## 🛠 Как это работает?
-Просто выберите корневую папку вашего проекта. Code Packer объединит содержимое всех релевантных файлов в один текстовый промпт, идеально отформатированный для моделей с большим контекстным окном (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro).
+Просто выберите корневую папку вашего проекта. Code Packer объединит содержимое всех релевантных файлов в один текстовый промпт, идеально отформатированный для моделей с большим контекстным окном (GPT, Claude Sonnet, Gemini Pro).
 
 ---
 ---
@@ -55,4 +55,4 @@ Start packing your code now:
     *   Generates a clear file tree structure so the AI can better understand the project architecture before code analysis.
 
 ## 🛠 How it Works?
-Simply select your project's root folder. Code Packer combines the content of all relevant files into a single text prompt, perfectly formatted for large context window models (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro).
+Simply select your project's root folder. Code Packer combines the content of all relevant files into a single text prompt, perfectly formatted for large context window models (GPT-, Claude, Sonnet, Gemini).
