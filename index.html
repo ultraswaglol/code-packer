@@ -102,8 +102,30 @@
         }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-        .settings { margin: 25px 0; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+        .settings { margin: 25px 0; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .settings-row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+        
         label { cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none; }
+
+        .custom-ignore-wrapper {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .custom-ignore-wrapper label { font-size: 0.9em; color: #aaa; margin-left: 2px; }
+        #customIgnore {
+            background-color: #111;
+            border: 1px solid #444;
+            color: #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+        #customIgnore:focus { outline: none; border-color: var(--accent-color); }
 
         .result-area { display: none; margin-top: 20px; }
 
@@ -246,10 +268,17 @@
     </div>
 
     <div class="settings">
-        <label><input type="checkbox" id="checkTree" checked> <span data-lang="setting_tree">Дерево файлов</span></label>
-        <label><input type="checkbox" id="checkGit" checked> <span data-lang="setting_git">Без .git</span></label>
-        <label><input type="checkbox" id="checkModules" checked> <span data-lang="setting_modules">Без node_modules</span></label>
-        <label><input type="checkbox" id="checkImages" checked> <span data-lang="setting_images">Без картинок</span></label>
+        <div class="settings-row">
+            <label><input type="checkbox" id="checkTree" checked> <span data-lang="setting_tree">Дерево файлов</span></label>
+            <label><input type="checkbox" id="checkGit" checked> <span data-lang="setting_git">Без .git</span></label>
+            <label><input type="checkbox" id="checkModules" checked> <span data-lang="setting_modules">Без node_modules</span></label>
+            <label><input type="checkbox" id="checkImages" checked> <span data-lang="setting_images">Без картинок</span></label>
+        </div>
+        
+        <div class="custom-ignore-wrapper">
+            <label for="customIgnore" data-lang="custom_ignore_label">Исключить дополнительно (через запятую):</label>
+            <input type="text" id="customIgnore" placeholder="dist, build, *.log, secret.js" data-lang-placeholder="custom_ignore_ph">
+        </div>
     </div>
 
     <div class="loader" id="loader" data-lang="loader">⏳ Анализирую структуру проекта...</div>
@@ -313,6 +342,8 @@
             'setting_git': 'Без .git',
             'setting_modules': 'Без node_modules',
             'setting_images': 'Без картинок',
+            'custom_ignore_label': 'Исключить дополнительно (через запятую):',
+            'custom_ignore_ph': 'dist, build, *.log, secret.js',
             'loader': '⏳ Анализирую структуру проекта...',
             'btn_copy': '📋 Скопировать',
             'btn_download': '💾 Скачать .txt',
@@ -350,6 +381,8 @@
             'setting_git': 'Without .git',
             'setting_modules': 'Without node_modules',
             'setting_images': 'Without Images',
+            'custom_ignore_label': 'Custom Ignore (comma separated):',
+            'custom_ignore_ph': 'dist, build, *.log, secret.js',
             'loader': '⏳ Analyzing project structure...',
             'btn_copy': '📋 Copy',
             'btn_download': '💾 Download .txt',
@@ -393,6 +426,13 @@
             }
         });
         
+        document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
+            let key = el.getAttribute('data-lang-placeholder');
+            if (translations[lang][key]) {
+                el.placeholder = translations[lang][key];
+            }
+        });
+        
         document.querySelectorAll('[data-lang-stats]').forEach(el => {
             let key = el.getAttribute('data-lang-stats');
             if (translations[lang][key]) {
@@ -432,6 +472,7 @@
     const resultArea = document.getElementById('resultArea');
     const statsBar = document.getElementById('statsBar');
     const loader = document.getElementById('loader');
+    const customIgnoreInput = document.getElementById('customIgnore');
 
     const binaryExtensions = [
         '.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.webp',
@@ -467,9 +508,14 @@
         const ignoreGit = document.getElementById('checkGit').checked;
         const ignoreModules = document.getElementById('checkModules').checked;
         const ignoreImages = document.getElementById('checkImages').checked;
+        
+        const customPatterns = customIgnoreInput.value.split(',')
+            .map(s => s.trim().toLowerCase())
+            .filter(s => s.length > 0);
 
         for (const file of files) {
             const path = file.webkitRelativePath;
+            const lowerPath = path.toLowerCase();
             
             if (ignoreGit && (path.includes('/.git/') || path.includes('\\.git\\'))) continue;
             if (ignoreModules && (path.includes('/node_modules/') || path.includes('\\node_modules\\') || path.includes('/venv/'))) continue;
@@ -478,6 +524,33 @@
 
             const ext = path.substring(path.lastIndexOf('.')).toLowerCase();
             if (ignoreImages && binaryExtensions.includes(ext)) continue;
+
+            if (customPatterns.length > 0) {
+                const pathParts = lowerPath.split('/'); 
+                const filename = pathParts[pathParts.length - 1];
+                
+                let shouldIgnore = false;
+                for (let pattern of customPatterns) {
+        
+                    if (pathParts.includes(pattern)) {
+                        shouldIgnore = true;
+                        break;
+                    }
+
+                    if (pattern.startsWith('*.')) {
+                        if (filename.endsWith(pattern.substring(1))) {
+                            shouldIgnore = true;
+                            break;
+                        }
+                    } else if (pattern.startsWith('.')) {
+                        if (filename.endsWith(pattern)) {
+                            shouldIgnore = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldIgnore) continue;
+            }
 
             if (file.size > 1024 * 1024) continue; 
 
